@@ -6,11 +6,13 @@ package uk.org.maps3;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
 import android.widget.Toast;
+import android.content.SharedPreferences;
 /**
  * @author BEUser
  *
@@ -20,11 +22,9 @@ public class SMSReceiver extends BroadcastReceiver {
 	/**
 	 * 
 	 */
+	boolean _active;
+	String _password;
 	LocationFinder lf = null;
-	//public SMSReceiver(Context contextArg) {
-		//Log.d("SMSReceiver","Constructor Called");
-		//lf = new LocationFinder(contextArg);
-	//}
 
 	/* (non-Javadoc)
 	 * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
@@ -34,8 +34,9 @@ public class SMSReceiver extends BroadcastReceiver {
         //---get the SMS message passed in---
         Bundle bundle = intentArg.getExtras();        
         SmsMessage[] msgs = null;
-        String str = "";            
-        if (bundle != null)
+        String str = "";   
+        getPrefs(contextArg);
+        if ((bundle != null) && _active)
         {
             //---retrieve the SMS message received---
             Object[] pdus = (Object[]) bundle.get("pdus");
@@ -88,8 +89,19 @@ public class SMSReceiver extends BroadcastReceiver {
             			"Message does not contain 'WAYN' - ignoring",
             			Toast.LENGTH_SHORT).show();
             }
-        }                         
+        } else {
+        	Toast.makeText(contextArg,
+        			"WAYN Disabled - Ignoring",
+        			Toast.LENGTH_SHORT).show();
+        }
     }
+	
+    private void getPrefs(Context context) {
+    	SharedPreferences settings = context.getSharedPreferences("WhereAreYou",Context.MODE_PRIVATE);
+    	_active = settings.getBoolean("Active", true);
+    	_password = settings.getString("Password","WAYN");
+    }
+
 	
 	public void onAddressLookedup(String resultStr) {
     	
