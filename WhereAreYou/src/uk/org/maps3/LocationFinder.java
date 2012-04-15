@@ -10,7 +10,6 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -46,7 +45,7 @@ public class LocationFinder implements LocationListener {
 		Criteria criteria = new Criteria();
 		bestProvider = locMgr.getBestProvider(criteria, false);
 		//bestProvider = LocationManager.NETWORK_PROVIDER;
-		LocationProvider info = locMgr.getProvider(bestProvider);
+		//LocationProvider info = locMgr.getProvider(bestProvider);
 
 	}
 	

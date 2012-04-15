@@ -12,7 +12,7 @@ import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
 import android.widget.Toast;
-import android.content.SharedPreferences;
+
 /**
  * @author BEUser
  *
