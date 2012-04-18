@@ -49,6 +49,7 @@ public class LocationFinder implements LocationListener {
 
 	}
 	
+	
 	public LonLat getLocationLL() {
 		Log.v("bestProvider",bestProvider);
 		// Ask for very infrequent updates from the best provider
@@ -67,6 +68,11 @@ public class LocationFinder implements LocationListener {
 			ll = null;
 		return ll;
 	}
+	
+	public void startFixSearch() {
+		locMgr.requestLocationUpdates(bestProvider, 36000,10000, this);		
+	}
+
 	
 	public void onLocationChanged(Location location) {
 		Log.v("locationListener","onLocationChanged");

@@ -3,7 +3,6 @@ package uk.org.maps3;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,6 +14,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class WhereAreYouActivity extends Activity  {
@@ -38,32 +38,22 @@ public class WhereAreYouActivity extends Activity  {
         //Enable the testButton
         Button testButton = (Button) findViewById(R.id.testButton);
         testButton.setOnClickListener(new OnClickListener() {
-        	 public void onClick(View v) {
-                 msgBox("testButton");
-                 //SMSReceiver smsr = new SMSReceiver();
-                 //Intent intentArg;
-                 //smsr.onReceive(getApplicationContext(), intentArg);
-                 Context contextArg = getApplicationContext();
-                 LocationFinder lf = new LocationFinder(contextArg);
+        	public void onClick(View v) {
+        		Context contextArg = getApplicationContext();
+                LocationFinder lf = new LocationFinder(contextArg);
              	LonLat ll = lf.getLocationLL();
              	if (ll!=null) {
  	            	AddressLookup al = new AddressLookup();
  	            	al.doLookup(ll);
  	            	String resultStr = al.resultStr + "\n" + ll.toStr();
- 	        		Log.d("testButton","resultStr="+resultStr);
- 	
- 	            	//---display the new SMS message on the screen.---
+ 	        		Log.d("testButton","resultStr="+resultStr); 	
  	            	Log.d("testButton",ll.toString());
- 	            	Toast.makeText(contextArg, 
- 	            			" Replying: "+resultStr, 
- 	            			Toast.LENGTH_SHORT).show();
+ 	            	msgBox(resultStr);
              	} else {
-                   	Toast.makeText(contextArg,
-                			"Failed to find location - sorry!",
-                			Toast.LENGTH_SHORT).show();             		
+ 	            	msgBox("Failed to find location");
              	}
         	 }
-        });
+        	});
         
         // Save the data when the enter or TAB key is pressed
         pwdText.setOnKeyListener(new View.OnKeyListener() {
@@ -122,6 +112,8 @@ public class WhereAreYouActivity extends Activity  {
     }
 
     private void msgBox(String msg) {
+     	TextView tv = (TextView)( findViewById(R.id.msgText));
+     	tv.setText(msg);
      	Toast.makeText(this,
     			msg,
     			Toast.LENGTH_SHORT).show();
