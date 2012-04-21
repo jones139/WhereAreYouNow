@@ -3,7 +3,10 @@
  */
 package uk.org.maps3;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.TimerTask;
 
 import android.content.Context;
 import android.location.Criteria;
@@ -11,7 +14,9 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 
 
 /**
@@ -22,11 +27,18 @@ import android.util.Log;
  * 			LonLat ll = lf.getLocationLL();
  *
  */
-public class LocationFinder implements LocationListener {
+public class LocationFinder implements LocationListener, Runnable {
 	LocationManager locMgr;
-	String bestProvider;
+	LocationReceiver lr;
+	String mProvider;
+	long mTimeStart;
+	Context mContext;
+	boolean mTimedOut = false;
+	Handler mHandler;
 	
 	public LocationFinder(Context contextArg) {
+		mContext = contextArg;
+		mHandler = new Handler();
 		locMgr = (LocationManager)
 				contextArg.getSystemService(
 							Context.LOCATION_SERVICE);
@@ -43,39 +55,42 @@ public class LocationFinder implements LocationListener {
 		
 		// Select the best provider to use.
 		Criteria criteria = new Criteria();
-		bestProvider = locMgr.getBestProvider(criteria, false);
-		//bestProvider = LocationManager.NETWORK_PROVIDER;
-		//LocationProvider info = locMgr.getProvider(bestProvider);
+		mProvider = locMgr.getBestProvider(criteria, false);
+		mProvider = LocationManager.GPS_PROVIDER;
+		//LocationProvider info = locMgr.getProvider(mProvider);
 
 	}
 	
 	
-	public LonLat getLocationLL() {
-		Log.v("bestProvider",bestProvider);
-		// Ask for very infrequent updates from the best provider
-		// - this seems to be necessary to allow getLastKnownLocation to
-		// work.		
-		locMgr.requestLocationUpdates(bestProvider, 36000,10000, this);
-		Location loc = locMgr.getLastKnownLocation(
-				bestProvider);	
-		locMgr.removeUpdates(this);
-		LonLat ll;
-		if (loc!=null)
-			ll = new LonLat(loc.getLongitude(),
-					loc.getLatitude(),
-					loc.getAccuracy());
-		else
-			ll = null;
-		return ll;
+	public void getLocationLL(LocationReceiver lr) {
+		Log.v("mProvider",mProvider);
+		this.lr = lr;
+		// Ask for location updates to be sent to the onLocationChanged() method of this class.
+		locMgr.requestLocationUpdates(mProvider, 0,0, this);
+		
+		// Set a timer running to allow us to give up on getting a GPS fix.
+        mHandler.removeCallbacks(this);
+        mHandler.postDelayed(this, 10000);
 	}
 	
 	public void startFixSearch() {
-		locMgr.requestLocationUpdates(bestProvider, 36000,10000, this);		
+		locMgr.requestLocationUpdates(mProvider, 36000,10000, this);		
 	}
 
 	
-	public void onLocationChanged(Location location) {
+	public void onLocationChanged(Location loc) {
 		Log.v("locationListener","onLocationChanged");
+		msgBox("onLocationChanged - mTimedOut ="+mTimedOut+" Provider="+loc.getProvider());
+		if (loc!=null) {
+			if ((loc.getProvider() == mProvider) || mTimedOut) {
+				locMgr.removeUpdates(this);
+				LonLat ll;
+				ll = new LonLat(loc.getLongitude(),
+						loc.getLatitude(),
+						loc.getAccuracy());
+				lr.onLocationFound(ll);
+			}
+		} else msgBox("loc==null - waiting...");
 	}
 
 	public void onProviderDisabled(String provider) {
@@ -84,8 +99,8 @@ public class LocationFinder implements LocationListener {
 	}
 
 	public void onProviderEnabled(String provider) {
-		// is provider better than bestProvider?
-		// is yes, bestProvider = provider
+		// is provider better than mProvider?
+		// is yes, mProvider = provider
 		Log.v("locationListener","onProviderEnabled");
 	}
 
@@ -93,4 +108,21 @@ public class LocationFinder implements LocationListener {
 		Log.v("locationListener","onStatusChanged");
 	}
 
+	// Called by the mHandler timer to signify timeout.  In which case we give up on GPS and fall back onto NETWORK_PROVIDER.
+	public void run() {
+		Log.v("WAYN","timeout runnable.run");
+		mTimedOut = true;
+		msgBox("TimedOut!");
+		Location loc = locMgr.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+		onLocationChanged(loc);
+
+	}
+
+	
+	public void msgBox(String msg) {
+		Toast.makeText(mContext,
+				msg,
+				Toast.LENGTH_SHORT).show();	
+	}
+	
 }

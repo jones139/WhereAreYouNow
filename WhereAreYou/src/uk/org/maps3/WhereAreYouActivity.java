@@ -17,7 +17,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class WhereAreYouActivity extends Activity  {
+public class WhereAreYouActivity extends Activity  
+	implements LocationReceiver, OnClickListener {
 	boolean _active;
 	String _password;
     EditText pwdText;
@@ -37,23 +38,7 @@ public class WhereAreYouActivity extends Activity  {
         
         //Enable the testButton
         Button testButton = (Button) findViewById(R.id.testButton);
-        testButton.setOnClickListener(new OnClickListener() {
-        	public void onClick(View v) {
-        		Context contextArg = getApplicationContext();
-                LocationFinder lf = new LocationFinder(contextArg);
-             	LonLat ll = lf.getLocationLL();
-             	if (ll!=null) {
- 	            	AddressLookup al = new AddressLookup();
- 	            	al.doLookup(ll);
- 	            	String resultStr = al.resultStr + "\n" + ll.toStr();
- 	        		Log.d("testButton","resultStr="+resultStr); 	
- 	            	Log.d("testButton",ll.toString());
- 	            	msgBox(resultStr);
-             	} else {
- 	            	msgBox("Failed to find location");
-             	}
-        	 }
-        	});
+        testButton.setOnClickListener(this);
         
         // Save the data when the enter or TAB key is pressed
         pwdText.setOnKeyListener(new View.OnKeyListener() {
@@ -120,4 +105,24 @@ public class WhereAreYouActivity extends Activity  {
     	Log.d("WhereAreYouActivity",msg);
 
     }
+
+
+	public void onLocationFound(LonLat ll) {
+     	if (ll!=null) {
+         	AddressLookup al = new AddressLookup();
+         	al.doLookup(ll);
+         	String resultStr = al.resultStr + "\n" + ll.toStr();
+     		Log.d("testButton","resultStr="+resultStr); 	
+         	Log.d("testButton",ll.toString());
+         	msgBox(resultStr);
+     	} else {
+         	msgBox("Failed to find location");
+     	}
+	}
+
+	public void onClick(View arg0) {
+   		Context contextArg = getApplicationContext();
+        LocationFinder lf = new LocationFinder(contextArg);
+     	lf.getLocationLL(this);
+	 }
 }

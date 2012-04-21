@@ -1,5 +1,8 @@
 package uk.org.maps3;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+
 public class LonLat {
 	public final double _lon;  //longitude in degrees
 	public final double _lat;  // latitude in degrees
@@ -13,7 +16,8 @@ public class LonLat {
 	}
 
 	String toStr() {
-		return ("lon="+_lon+", lat="+_lat+":  accuracy="+_acc+" m");
+		NumberFormat df = new DecimalFormat("#0.000");
+		return ("lon="+df.format(_lon)+", lat="+df.format(_lat)+":  accuracy="+df.format(_acc)+" m");
 	}
 
 }
