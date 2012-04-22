@@ -3,13 +3,9 @@
  */
 package uk.org.maps3;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.TimerTask;
 
+import java.util.List;
 import android.content.Context;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -35,10 +31,12 @@ public class LocationFinder implements LocationListener, Runnable {
 	Context mContext;
 	boolean mTimedOut = false;
 	Handler mHandler;
+	boolean mUseGPS = true;
 	
 	public LocationFinder(Context contextArg) {
 		mContext = contextArg;
 		mHandler = new Handler();
+		mUseGPS = false;
 		locMgr = (LocationManager)
 				contextArg.getSystemService(
 							Context.LOCATION_SERVICE);
@@ -53,16 +51,16 @@ public class LocationFinder implements LocationListener, Runnable {
 			Log.v("LocationFinder",provider+","+locMgr.getProvider(provider).toString());
 		}
 		
-		// Select the best provider to use.
-		Criteria criteria = new Criteria();
-		mProvider = locMgr.getBestProvider(criteria, false);
-		mProvider = LocationManager.GPS_PROVIDER;
-		//LocationProvider info = locMgr.getProvider(mProvider);
-
 	}
 	
 	
-	public void getLocationLL(LocationReceiver lr) {
+	public void getLocationLL(LocationReceiver lr, int timeOutSec, boolean useGPS) {
+		mUseGPS = useGPS;
+		if (mUseGPS) {
+			mProvider = LocationManager.GPS_PROVIDER;
+		} else {
+			mProvider = LocationManager.NETWORK_PROVIDER;
+		}
 		Log.v("mProvider",mProvider);
 		this.lr = lr;
 		// Ask for location updates to be sent to the onLocationChanged() method of this class.
@@ -70,7 +68,7 @@ public class LocationFinder implements LocationListener, Runnable {
 		
 		// Set a timer running to allow us to give up on getting a GPS fix.
         mHandler.removeCallbacks(this);
-        mHandler.postDelayed(this, 10000);
+        mHandler.postDelayed(this, timeOutSec*1000);
 	}
 	
 	public void startFixSearch() {
@@ -80,15 +78,18 @@ public class LocationFinder implements LocationListener, Runnable {
 	
 	public void onLocationChanged(Location loc) {
 		Log.v("locationListener","onLocationChanged");
-		msgBox("onLocationChanged - mTimedOut ="+mTimedOut+" Provider="+loc.getProvider());
 		if (loc!=null) {
+			msgBox("onLocationChanged - mTimedOut ="+mTimedOut+" Provider="+loc.getProvider());
 			if ((loc.getProvider() == mProvider) || mTimedOut) {
 				locMgr.removeUpdates(this);
+		        mHandler.removeCallbacks(this); // to avoid this function being called again by the timeOut run() function.
 				LonLat ll;
 				ll = new LonLat(loc.getLongitude(),
 						loc.getLatitude(),
 						loc.getAccuracy());
 				lr.onLocationFound(ll);
+			} else {
+				msgBox("Skipping location update by "+mProvider);
 			}
 		} else msgBox("loc==null - waiting...");
 	}

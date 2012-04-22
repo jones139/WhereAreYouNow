@@ -19,10 +19,14 @@ import android.widget.Toast;
 
 public class WhereAreYouActivity extends Activity  
 	implements LocationReceiver, OnClickListener {
-	boolean _active;
-	String _password;
+	boolean mActive;
+	String mPassword;
+	int mTimeOutSec = 60;
+	boolean mUseGPS = true;
     EditText pwdText;
     CheckBox enableCheckBox;
+    EditText timeOutText;
+    CheckBox useGPSCheckBox;
 
 	
     /** Called when the activity is first created. */
@@ -30,10 +34,12 @@ public class WhereAreYouActivity extends Activity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        setDefaultPrefs();
+        getPrefs();
         savePrefs();
         pwdText = (EditText) findViewById(R.id.passwordText1);
         enableCheckBox = (CheckBox) findViewById(R.id.enableCheckBox);
+        timeOutText = (EditText) findViewById(R.id.timeOutText);
+        useGPSCheckBox = (CheckBox) findViewById(R.id.useGPSCheckBox);
         setFormValues();
         
         //Enable the testButton
@@ -70,44 +76,63 @@ public class WhereAreYouActivity extends Activity
     			savePrefs();
         	}
         });
+        
+        useGPSCheckBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+        	public void onCheckedChanged(CompoundButton v, boolean b) {
+        		msgBox("Saving Data");
+    			getFormValues();
+    			savePrefs();
+        	}
+        });
     }
     
+    /** Populate the form components from member variables values */
     private void setFormValues() {
-    	pwdText.setText(_password);
-    	enableCheckBox.setChecked(_active);
+    	pwdText.setText(mPassword);
+    	enableCheckBox.setChecked(mActive);
+    	timeOutText.setText(Integer.toString(mTimeOutSec));
+    	useGPSCheckBox.setChecked(mUseGPS);
     }
     
+    /* Read values from the form, and set member variables with the values */
     private void getFormValues() {
-    	_password = pwdText.getText().toString();
-    	_active = enableCheckBox.isChecked();
+    	mPassword = pwdText.getText().toString();
+    	mActive = enableCheckBox.isChecked();
+    	try {
+        	mTimeOutSec = Integer.parseInt(timeOutText.getText().toString());
+    	} catch(NumberFormatException nfe) {
+    		msgBox("Could Not Parse "+timeOutText.getText().toString()+" as an Integer - defaulting to 60s.");
+    		mTimeOutSec = 60;
+    	} 
+    	mUseGPS = useGPSCheckBox.isChecked();
     }
     
-    private void setDefaultPrefs() {
+    /* Read preferences from the SharedPreferences storage area and populate member variables with the values */
+    private void getPrefs() {
     	SharedPreferences settings = getSharedPreferences("WhereAreYou",MODE_PRIVATE);
-    	_active = settings.getBoolean("Active", true);
-    	_password = settings.getString("Password","WAYN");
+    	mActive = settings.getBoolean("Active", true);
+    	mPassword = settings.getString("Password","WAYN");
+		mTimeOutSec = settings.getInt("TimeOutSec", 60);
+		mUseGPS = settings.getBoolean("UseGPS",true);
     }
     
+    /** Write the current valuse of the preferences to the SharedPreferences storage area */
     private void savePrefs() {
     	SharedPreferences settings = getSharedPreferences("WhereAreYou",MODE_PRIVATE);
     	SharedPreferences.Editor editor = settings.edit();
-    	editor.putBoolean("Active", _active);
-    	editor.putString("Password",_password);
+    	editor.putBoolean("Active", mActive);
+    	editor.putString("Password",mPassword);
+    	editor.putInt("TimeOutSec", mTimeOutSec);
+    	editor.putBoolean("UseGPS", mUseGPS);
     	editor.commit();
     }
 
-    private void msgBox(String msg) {
-     	TextView tv = (TextView)( findViewById(R.id.msgText));
-     	tv.setText(msg);
-     	Toast.makeText(this,
-    			msg,
-    			Toast.LENGTH_SHORT).show();
-    	Log.d("WhereAreYouActivity",msg);
-
-    }
 
 
-	public void onLocationFound(LonLat ll) {
+    /** Callback called by LocationFinder once it has found the location - passes a LonLat object
+     * 	containing information on the location.
+     */
+    public void onLocationFound(LonLat ll) {
      	if (ll!=null) {
          	AddressLookup al = new AddressLookup();
          	al.doLookup(ll);
@@ -120,9 +145,24 @@ public class WhereAreYouActivity extends Activity
      	}
 	}
 
+	/* Callback for the 'Test' button - Uses LocationFinder to find the current location, and displays it on the screen */
 	public void onClick(View arg0) {
-   		Context contextArg = getApplicationContext();
+		msgBox("Searching for Location...");
+		Context contextArg = getApplicationContext();
         LocationFinder lf = new LocationFinder(contextArg);
-     	lf.getLocationLL(this);
+     	lf.getLocationLL(this,mTimeOutSec,mUseGPS);
 	 }
+
+	/* Write a message box to the screen, and the log */
+	private void msgBox(String msg) {
+     	TextView tv = (TextView)( findViewById(R.id.msgText));
+     	tv.setText(msg);
+     	Toast.makeText(this,
+    			msg,
+    			Toast.LENGTH_SHORT).show();
+    	Log.d("WhereAreYouActivity",msg);
+
+    }
+
+
 }
