@@ -4,8 +4,10 @@
 package uk.org.maps3;
 
 
+import java.util.Iterator;
 import java.util.List;
 import android.content.Context;
+import android.location.GpsSatellite;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -13,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
+import android.location.GpsStatus;;
 
 
 /**
@@ -23,7 +26,7 @@ import android.widget.Toast;
  * 			LonLat ll = lf.getLocationLL();
  *
  */
-public class LocationFinder implements LocationListener, Runnable {
+public class LocationFinder implements LocationListener, Runnable, GpsStatus.Listener {
 	LocationManager locMgr;
 	LocationReceiver lr;
 	String mProvider;
@@ -65,6 +68,7 @@ public class LocationFinder implements LocationListener, Runnable {
 		this.lr = lr;
 		// Ask for location updates to be sent to the onLocationChanged() method of this class.
 		locMgr.requestLocationUpdates(mProvider, 0,0, this);
+		locMgr.addGpsStatusListener(this);
 		
 		// Set a timer running to allow us to give up on getting a GPS fix.
         mHandler.removeCallbacks(this);
@@ -124,6 +128,25 @@ public class LocationFinder implements LocationListener, Runnable {
 		Toast.makeText(mContext,
 				msg,
 				Toast.LENGTH_SHORT).show();	
+	}
+
+
+	public void onGpsStatusChanged(int eventNo) {
+		msgBox("onGpsStatusChanged - eventNo="+eventNo);
+		 if (eventNo == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
+				GpsStatus gpsStatus = locMgr.getGpsStatus(null);
+	            Iterable<GpsSatellite> sats = gpsStatus.getSatellites();
+	            Iterator<GpsSatellite> it = sats.iterator();
+	            String msg = "Satellites...";
+	            while ( it.hasNext() ) 
+	            { 
+	                    GpsSatellite oSat = (GpsSatellite) it.next() ; 
+	                    Log.v("TEST","LocationActivity - onGpsStatusChange: Satellites: " + 
+	    oSat.getSnr() ) ; 
+	                    msg = msg+"snr="+oSat.getSnr()+", ";
+	                    msgBox(msg);
+	            } 
+		 }
 	}
 	
 }
