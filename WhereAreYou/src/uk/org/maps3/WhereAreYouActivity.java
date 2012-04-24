@@ -154,12 +154,12 @@ public class WhereAreYouActivity extends Activity
 	 }
 
 	/* Write a message box to the screen, and the log */
-	private void msgBox(String msg) {
+	public void msgBox(String msg) {
      	TextView tv = (TextView)( findViewById(R.id.msgText));
      	tv.setText(msg);
-     	Toast.makeText(this,
-    			msg,
-    			Toast.LENGTH_SHORT).show();
+     	//Toast.makeText(this,
+    	//		msg,
+    	//		Toast.LENGTH_SHORT).show();
     	Log.d("WhereAreYouActivity",msg);
 
     }

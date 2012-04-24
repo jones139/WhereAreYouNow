@@ -74,7 +74,7 @@ public class SMSReceiver extends BroadcastReceiver implements LocationReceiver {
 							Toast.LENGTH_SHORT).show();
 					// Get the location using the LocationFinder.
 					smsNumber = msgs[0].getOriginatingAddress();
-					lf.getLocationLL(this,mTimeOutSec,mUseGPS);
+					lf.getLocationLL((LocationReceiver) this,mTimeOutSec,mUseGPS);
 					Toast.makeText(contextArg,
 							"Returned from getLocationLL()",
 							Toast.LENGTH_SHORT).show();
@@ -126,5 +126,11 @@ public class SMSReceiver extends BroadcastReceiver implements LocationReceiver {
 			Log.d("SMSReceiver", "Failed to find location - ll is null");
 		}
 
+	}
+
+	// Callback for debugging info from LocationFinder
+	public void msgBox(String msg) {
+		// TODO Do nothing - we operate silently...
+		
 	}
 }

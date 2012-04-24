@@ -17,6 +17,12 @@ import android.util.Log;
 import android.widget.Toast;
 import android.location.GpsStatus;;
 
+interface LocationReceiver {
+	/** The function to be called once we have found the location */
+	public void onLocationFound(LonLat ll);
+	/** A function to be called with debug messages */
+	public void msgBox(String msg);
+}
 
 /**
  * @author Graham Jones
@@ -56,7 +62,7 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 		
 	}
 	
-	
+		
 	public void getLocationLL(LocationReceiver lr, int timeOutSec, boolean useGPS) {
 		mUseGPS = useGPS;
 		if (mUseGPS) {
@@ -83,9 +89,10 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 	public void onLocationChanged(Location loc) {
 		Log.v("locationListener","onLocationChanged");
 		if (loc!=null) {
-			msgBox("onLocationChanged - mTimedOut ="+mTimedOut+" Provider="+loc.getProvider());
-			if ((loc.getProvider() == mProvider) || mTimedOut) {
+			lr.msgBox("onLocationChanged - mTimedOut ="+mTimedOut+" Provider="+loc.getProvider());
+			if ((loc.getProvider().equals(mProvider)) || mTimedOut) {
 				locMgr.removeUpdates(this);
+				locMgr.removeGpsStatusListener(this);
 		        mHandler.removeCallbacks(this); // to avoid this function being called again by the timeOut run() function.
 				LonLat ll;
 				ll = new LonLat(loc.getLongitude(),
@@ -93,9 +100,9 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 						loc.getAccuracy());
 				lr.onLocationFound(ll);
 			} else {
-				msgBox("Skipping location update by "+mProvider);
+				lr.msgBox("Skipping location update by "+loc.getProvider()+" mProvider="+mProvider+".");
 			}
-		} else msgBox("loc==null - waiting...");
+		} else lr.msgBox("loc==null - waiting...");
 	}
 
 	public void onProviderDisabled(String provider) {
@@ -117,35 +124,37 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 	public void run() {
 		Log.v("WAYN","timeout runnable.run");
 		mTimedOut = true;
-		msgBox("TimedOut!");
+		lr.msgBox("TimedOut!");
 		Location loc = locMgr.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 		onLocationChanged(loc);
 
 	}
 
 	
-	public void msgBox(String msg) {
-		Toast.makeText(mContext,
-				msg,
-				Toast.LENGTH_SHORT).show();	
-	}
+//	public void msgBox(String msg) {
+//		Toast.makeText(mContext,
+//				msg,
+//				Toast.LENGTH_SHORT).show();	
+//	}
 
 
 	public void onGpsStatusChanged(int eventNo) {
-		msgBox("onGpsStatusChanged - eventNo="+eventNo);
 		 if (eventNo == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
-				GpsStatus gpsStatus = locMgr.getGpsStatus(null);
-	            Iterable<GpsSatellite> sats = gpsStatus.getSatellites();
-	            Iterator<GpsSatellite> it = sats.iterator();
-	            String msg = "Satellites...";
-	            while ( it.hasNext() ) 
-	            { 
-	                    GpsSatellite oSat = (GpsSatellite) it.next() ; 
-	                    Log.v("TEST","LocationActivity - onGpsStatusChange: Satellites: " + 
-	    oSat.getSnr() ) ; 
-	                    msg = msg+"snr="+oSat.getSnr()+", ";
-	                    msgBox(msg);
+			 int nSat = 0;
+			 //msgBox("onGpsStatusChanged - event=GPS_EVENT_SATELLITE_STATUS="+eventNo);
+			 GpsStatus gpsStatus = locMgr.getGpsStatus(null);
+			 Iterable<GpsSatellite> sats = gpsStatus.getSatellites();
+			 Iterator<GpsSatellite> it = sats.iterator();
+			 String msg = "Satellites...";
+			 while ( it.hasNext() ) {
+				 nSat++;
+				 GpsSatellite oSat = (GpsSatellite) it.next() ; 
+				 Log.v("TEST","LocationActivity - onGpsStatusChange: Satellites: " + 
+						 oSat.getSnr() ) ; 
+				 msg = msg+"snr="+oSat.getSnr()+", ";
 	            } 
+			 	msg = msg+" - "+nSat+" in view.";
+                lr.msgBox(msg);
 		 }
 	}
 	
