@@ -17,7 +17,8 @@ import android.widget.Toast;
  * @author BEUser
  * 
  */
-public class SMSReceiver extends BroadcastReceiver implements LocationReceiver {
+public class SMSReceiver extends BroadcastReceiver 
+	implements LocationReceiver, AddressReceiver {
 
 	/**
 	 * 
@@ -108,18 +109,8 @@ public class SMSReceiver extends BroadcastReceiver implements LocationReceiver {
 		Toast.makeText(mContext, "onLocationFound()", Toast.LENGTH_SHORT)
 				.show();
 		if (ll != null) {
-			AddressLookup al = new AddressLookup();
+			AddressLookup al = new AddressLookup(this);
 			al.doLookup(ll);
-			String resultStr = al.resultStr + "\n" + ll.toStr();
-			Log.d("SMSReceiver", "resultStr=" + resultStr);
-
-			// ---display the new SMS message on the screen.---
-			Log.d("onReceive", ll.toString());
-			Toast.makeText(mContext, " Replying: " + resultStr,
-					Toast.LENGTH_SHORT).show();
-			// Now reply to the message with our location.
-			SmsManager sm = SmsManager.getDefault();
-			sm.sendTextMessage(smsNumber, null, resultStr, null, null);
 		} else {
 			Toast.makeText(mContext, "Failed to find location - sorry!",
 					Toast.LENGTH_SHORT).show();
@@ -128,6 +119,20 @@ public class SMSReceiver extends BroadcastReceiver implements LocationReceiver {
 
 	}
 
+	public void onAddressFound(LonLat ll, String addressStr) {
+		String resultStr = addressStr + "\n" + ll.toStr();
+		Log.d("SMSReceiver", "resultStr=" + resultStr);
+
+		// ---display the new SMS message on the screen.---
+		Log.d("onReceive", ll.toString());
+		Toast.makeText(mContext, " Replying: " + resultStr,
+				Toast.LENGTH_SHORT).show();
+		// Now reply to the message with our location.
+		SmsManager sm = SmsManager.getDefault();
+		sm.sendTextMessage(smsNumber, null, resultStr, null, null);
+		
+	}
+	
 	// Callback for debugging info from LocationFinder
 	public void msgBox(String msg) {
 		// TODO Do nothing - we operate silently...

@@ -3,7 +3,6 @@
  */
 package uk.org.maps3;
 
-
 import java.io.IOException;
 import java.io.StringReader;
 
@@ -16,39 +15,40 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-
-import android.os.AsyncTask;
 import android.util.Log;
+
+
+interface AddressReceiver {
+	/** The function to be called once we have found the location */
+	public void onAddressFound(LonLat ll, String addressStr);
+	/** A function to be called with debug messages */
+	public void msgBox(String msg);
+}
 
 /**
  * @author BEUser
  *
  */
-public class AddressLookup extends AsyncTask<LonLat, String, String> {
+public class AddressLookup implements Runnable {
 	public String resultStr;
-	
-	protected String doInBackground(LonLat... ll) {
-		return doLookup(ll);
+	LonLat ll;
+	AddressReceiver ar;
+		
+	public AddressLookup(AddressReceiver ar) {
+		this.ar = ar;
 	}
 	
-	protected void onProgressUpdate() {
-		Log.d("AddressLookup","onProgressUpdate()");
-		super.onProgressUpdate();
-	}
-	
-	
-	@Override
-    protected void onPostExecute(String result) {
-		Log.d("AddressLookup","onPostExecute() - result="+result);
-		resultStr = result;
-        return;
-    }
-	
-	public String doLookup(LonLat... ll) {
+	public void doLookup(LonLat ll) {
 		Log.d("AddressLookup","doLookup()");
-		if (ll[0]!=null) {
+		this.ll = ll;
+		Thread trd = new Thread(this);
+		trd.run();
+	}
+	
+		public void run() {
+		if (ll!=null) {
 			String url = "http://nominatim.openstreetmap.org/reverse?format=xml&" +
-					"lon="+ll[0].lon()+"&lat="+ll[0].lat();
+					"lon="+ll.lon()+"&lat="+ll.lat();
 			
 			HttpGet request = new HttpGet(url);
 			ResponseHandler<String> responseHandler =
@@ -91,30 +91,30 @@ public class AddressLookup extends AsyncTask<LonLat, String, String> {
 					Log.d("AddressLookup","End document");
 					Log.d("AddressLookup","resultStr="+resultStr);
 				
-					return resultStr;
+					ar.onAddressFound(this.ll,resultStr);
 				} else
-					return "Error - no response";
+					ar.onAddressFound(this.ll,"Error - no response");
 			
 			} catch (ClientProtocolException e) {
 				// TODO Auto-generated catch block
 				Log.d("AddressLookup","ClientProtocolException");
 				e.printStackTrace();
-				return "Error - ClientProtocolException";
+				ar.onAddressFound( this.ll,"Error - ClientProtocolException");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				Log.d("AddressLookup","IOException");
 				e.printStackTrace();
-				return "Error - IOException";
+				ar.onAddressFound(this.ll,"Error - IOException");
 			} catch (XmlPullParserException e) {
 				// TODO Auto-generated catch block
 				Log.d("AddressLookup","XmlPullParserException");
 				e.printStackTrace();
-				return "Error - XmlPullParserException";
+				ar.onAddressFound(this.ll,"Error - XmlPullParserException");
 			}
 		}
 		else {
 			Log.d("AddressLookup","ll is null - ignoring");
-			return("Error - ll is null - ignoring");
+			ar.onAddressFound(this.ll,"Error - ll is null - ignoring");
 		}
 	}
 }

@@ -14,7 +14,6 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.Toast;
 import android.location.GpsStatus;;
 
 interface LocationReceiver {
@@ -74,10 +73,13 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 		this.lr = lr;
 		// Ask for location updates to be sent to the onLocationChanged() method of this class.
 		locMgr.requestLocationUpdates(mProvider, 0,0, this);
+		// Monitor GPS Status while we are searching for a fix.  this.onGpsStatusChanged()
+		// is called when the GPS Status changes.
 		locMgr.addGpsStatusListener(this);
 		
-		// Set a timer running to allow us to give up on getting a GPS fix.
+		// Set a timer running to allow us to give up on getting a GPS fix.  
         mHandler.removeCallbacks(this);
+		// this.run() is called when the timer times out.
         mHandler.postDelayed(this, timeOutSec*1000);
 	}
 	
@@ -130,16 +132,9 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 
 	}
 
-	
-//	public void msgBox(String msg) {
-//		Toast.makeText(mContext,
-//				msg,
-//				Toast.LENGTH_SHORT).show();	
-//	}
-
-
 	public void onGpsStatusChanged(int eventNo) {
-		 if (eventNo == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
+		 //if (eventNo == GpsStatus.GPS_EVENT_SATELLITE_STATUS) 
+		 {
 			 int nSat = 0;
 			 //msgBox("onGpsStatusChanged - event=GPS_EVENT_SATELLITE_STATUS="+eventNo);
 			 GpsStatus gpsStatus = locMgr.getGpsStatus(null);
@@ -149,9 +144,12 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 			 while ( it.hasNext() ) {
 				 nSat++;
 				 GpsSatellite oSat = (GpsSatellite) it.next() ; 
-				 Log.v("TEST","LocationActivity - onGpsStatusChange: Satellites: " + 
+				 Log.v("TEST","LocationActivity - onGpsStatusChange: Satellites: \n" + 
 						 oSat.getSnr() ) ; 
-				 msg = msg+"snr="+oSat.getSnr()+", ";
+				 msg = msg + oSat.getPrn()+ ", "
+						 + oSat.getSnr()+", "
+						 + oSat.hasAlmanac()+","
+						 + oSat.hasEphemeris()+", \n";
 	            } 
 			 	msg = msg+" - "+nSat+" in view.";
                 lr.msgBox(msg);

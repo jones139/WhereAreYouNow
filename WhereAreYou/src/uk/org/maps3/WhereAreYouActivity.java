@@ -15,10 +15,9 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class WhereAreYouActivity extends Activity  
-	implements LocationReceiver, OnClickListener {
+	implements LocationReceiver, AddressReceiver, OnClickListener {
 	boolean mActive;
 	String mPassword;
 	int mTimeOutSec = 60;
@@ -134,16 +133,21 @@ public class WhereAreYouActivity extends Activity
      */
     public void onLocationFound(LonLat ll) {
      	if (ll!=null) {
-         	AddressLookup al = new AddressLookup();
+     		msgBox("Found Location - "+ll.toStr()+". Looking up address....");
+     		AddressLookup al = new AddressLookup(this);
          	al.doLookup(ll);
-         	String resultStr = al.resultStr + "\n" + ll.toStr();
-     		Log.d("testButton","resultStr="+resultStr); 	
-         	Log.d("testButton",ll.toString());
-         	msgBox(resultStr);
+         	// onAddressFound caled with address when found.
      	} else {
          	msgBox("Failed to find location");
      	}
 	}
+    
+    public void onAddressFound(LonLat ll, String addressStr) {
+    	String resultStr = addressStr + "\n" + ll.toStr();
+ 		Log.d("testButton","resultStr="+resultStr); 	
+     	Log.d("testButton",ll.toString());
+     	msgBox(resultStr);
+    }
 
 	/* Callback for the 'Test' button - Uses LocationFinder to find the current location, and displays it on the screen */
 	public void onClick(View arg0) {
