@@ -9,15 +9,17 @@ public class LonLat {
 	public final float _acc;  // fix accuracy in metres.
 	public double lon() {return _lon;};
 	public double lat() {return _lat;};
-	public LonLat(double llon,double llat, float lacc) {
+	public String provider;
+	public LonLat(double llon,double llat, float lacc, String provider) {
 		_lon = llon;
 		_lat = llat;
 		_acc = lacc;
+		this.provider = provider;
 	}
 
 	String toStr() {
 		NumberFormat df = new DecimalFormat("#0.000");
-		return ("lon="+df.format(_lon)+", lat="+df.format(_lat)+":  accuracy="+df.format(_acc)+" m");
+		return ("lon="+df.format(_lon)+", lat="+df.format(_lat)+":  accuracy="+df.format(_acc)+" m ("+provider+")");
 	}
 
 }

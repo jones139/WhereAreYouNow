@@ -159,6 +159,9 @@ public class WhereAreYouActivity extends Activity
 
 	/* Write a message box to the screen, and the log */
 	public void msgBox(String msg) {
+		BatteryMonitor bm=new BatteryMonitor();
+		float batState = bm.getBatteryState(this);
+		msg = msg + "\nBattery="+batState+"%";
      	TextView tv = (TextView)( findViewById(R.id.msgText));
      	tv.setText(msg);
      	//Toast.makeText(this,

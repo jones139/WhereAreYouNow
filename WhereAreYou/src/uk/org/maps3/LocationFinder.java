@@ -38,6 +38,8 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 	long mTimeStart;
 	Context mContext;
 	boolean mTimedOut = false;
+	int timeOutCount = 0;
+	int timeOutSec;
 	Handler mHandler;
 	boolean mUseGPS = true;
 	
@@ -63,6 +65,7 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 	
 		
 	public void getLocationLL(LocationReceiver lr, int timeOutSec, boolean useGPS) {
+		this.timeOutSec = timeOutSec;
 		mUseGPS = useGPS;
 		if (mUseGPS) {
 			mProvider = LocationManager.GPS_PROVIDER;
@@ -90,6 +93,7 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 	
 	public void onLocationChanged(Location loc) {
 		Log.v("locationListener","onLocationChanged");
+		lr.msgBox("onLocationChanged - mTimedOut ="+mTimedOut+" Provider="+loc.getProvider());
 		if (loc!=null) {
 			lr.msgBox("onLocationChanged - mTimedOut ="+mTimedOut+" Provider="+loc.getProvider());
 			if ((loc.getProvider().equals(mProvider)) || mTimedOut) {
@@ -99,7 +103,8 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 				LonLat ll;
 				ll = new LonLat(loc.getLongitude(),
 						loc.getLatitude(),
-						loc.getAccuracy());
+						loc.getAccuracy(),
+						loc.getProvider());
 				lr.onLocationFound(ll);
 			} else {
 				lr.msgBox("Skipping location update by "+loc.getProvider()+" mProvider="+mProvider+".");
@@ -122,14 +127,34 @@ public class LocationFinder implements LocationListener, Runnable, GpsStatus.Lis
 		Log.v("locationListener","onStatusChanged");
 	}
 
-	// Called by the mHandler timer to signify timeout.  In which case we give up on GPS and fall back onto NETWORK_PROVIDER.
+	// Called by the mHandler timer to signify timeout.  
+	// In which case we give up on GPS and fall back onto NETWORK_PROVIDER.
+	// At the moment, if we time out on NETWORK_PROVIDER too, it just
+	// keeps trying over and over - maybe set a count in future to 
+	// make it give up altogether eventually?
 	public void run() {
 		Log.v("WAYN","timeout runnable.run");
 		mTimedOut = true;
-		lr.msgBox("TimedOut!");
-		Location loc = locMgr.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-		onLocationChanged(loc);
+		timeOutCount ++;
+		lr.msgBox("TimedOut Number "+timeOutCount+
+					"! - using network location instead.");
+		//Location loc = locMgr.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+		//onLocationChanged(loc);
 
+		// switch off GPS monitoring to save battery.
+		locMgr.removeGpsStatusListener(this);
+		locMgr.removeUpdates(this);
+
+		// Re-start search using network rather than GPS.
+		mProvider = LocationManager.NETWORK_PROVIDER;
+		Log.v("mProvider",mProvider);
+		// Ask for location updates to be sent to the onLocationChanged() method of this class.
+		locMgr.requestLocationUpdates(mProvider, 0,0, this);
+	
+		// Set a timer running to allow us to give up on getting a fix.  
+		// this.run() is called when the timer times out.
+		mHandler.removeCallbacks(this);
+		mHandler.postDelayed(this, timeOutSec*1000);
 	}
 
 	public void onGpsStatusChanged(int eventNo) {
