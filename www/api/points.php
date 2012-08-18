@@ -79,7 +79,7 @@ function addPoint($dbconn,$userId,$lat,$lon,$dateStr,$msg) {
 }
 
 function getLatest($userId) {
-  $query  = "select ptId,lat,lon,date from locPts order by ptId desc limit 1";
+  $query  = "select ptId,lat,lon,date from locPts where userId=".$userId." order by ptId desc limit 1";
   $result = mysql_query($query) 
     or die('Query failed: ' . mysql_error());
   $rows=array();
