@@ -21,6 +21,7 @@ create table users (
                    name varchar(256),
 		   userName varchar(256),
 		   password varchar(256),
+		   role int,
 		   icon blob,
 		   homeLat float,
 		   homeLon float,

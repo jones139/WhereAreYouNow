@@ -3,35 +3,65 @@
     <title>API Test</title>
   </head>
   <body>
-    <h1>API Test</h1>
     <div style="border:1px solid;">
-      <h2>Add Point</h2>
-      <form action="api/points.php" method="get">
-	<label>User Id</label><input name="userId" type="text"><br/>
-	<label>Lon,Lat</label>
-	<input name="lon" type="text">,
-	<input name="lat" type="text"><br/>
-	<input type="hidden" name="mode" value="add">
-	<input type="submit"/>
-      </form>
+      <h1>Points</h1>
+      <div style="border:1px solid;">
+	<h2>Add Point</h2>
+	<form action="api/points.php" method="get">
+	  <label>User Id</label><input name="userId" type="text"><br/>
+	  <label>Lon,Lat</label>
+	  <input name="lon" type="text">,
+	  <input name="lat" type="text"><br/>
+	  <input type="hidden" name="mode" value="add">
+	  <input type="submit"/>
+	</form>
+      </div>
+      
+      <div style="border:1px solid;">
+	<h2>List Points</h2>
+	<form action="api/points.php" method="get">
+	  <label>User Id</label><input name="userId" type="text"><br/>
+	  <input type="hidden" name="mode" value="getHistory">
+	  <input type="submit"/>
+	</form>
+      </div>
+      
+      <div style="border:1px solid;">
+	<h2>Get Latest Point</h2>
+	<form action="api/points.php" method="get">
+	  <label>User Id</label><input name="userId" type="text"><br/>
+	  <input type="hidden" name="mode" value="getLatest">
+	  <input type="submit"/>
+	</form>
+      </div>
     </div>
-
     <div style="border:1px solid;">
-      <h2>List Points</h2>
-      <form action="api/points.php" method="get">
-	<label>User Id</label><input name="userId" type="text"><br/>
-	<input type="hidden" name="mode" value="getHistory">
-	<input type="submit"/>
-      </form>
+      <h1>Users</h1>
+      <div style="border:1px solid;">
+	<h2>Add User</h2>
+	<form action="api/users.php" method="get">
+	  <label>User Name</label><input name="userName" type="text"><br/>
+	  <label>Password</label><input name="password" type="text"><br/>
+	  <label>Display Name</label><input name="displayName" type="text"><br/>
+	  <label>Home Lon,Lat</label>
+	  <input name="homeLon" type="text">,
+	  <input name="homeLat" type="text"><br/>
+	  <input type="hidden" name="mode" value="add">
+	  <input type="submit"/>
+	</form>
+      </div>
     </div>
-    
     <div style="border:1px solid;">
-      <h2>Get Latest Point</h2>
-      <form action="api/points.php" method="get">
-	<label>User Id</label><input name="userId" type="text"><br/>
-	<input type="hidden" name="mode" value="getLatest">
-	<input type="submit"/>
-      </form>
+      <h1>Shares</h1>
+      <div style="border:1px solid;">
+	<h2>Add Share</h2>
+	<form action="api/shares.php" method="get">
+	  <label>Owner Id</label><input name="ownerId" type="text"><br/>
+	  <label>Viewer Id</label><input name="viewerId" type="text"><br/>
+	  <input type="hidden" name="mode" value="add">
+	  <input type="submit"/>
+	</form>
+      </div>
     </div>
   </body>
 </html>
