@@ -1,0 +1,69 @@
+<html>
+  <head>
+    <title>Add Point</title>
+
+    <style type="text/css">
+      @import "js/dijit/themes/tundra/tundra.css";
+      @import "js/dojo/resources/dojo.css"
+    </style>
+
+    <script src="js/dojo/dojo.js" 
+	    data-dojo-config="async:true,parseOnLoad:true">
+    </script>
+
+
+  </head>
+  <body>
+    <h1>Add Point</h1>
+    <div style="border:1px solid;">
+      <h2>Add Point</h2>
+      <div id="locDiv">Location to go here...</div>
+      <form action="api/points.php" method="post">
+	<label>User Id</label><input name="userId" type="text"><br/>
+	<label>Date/Time</label><input id="date" name="dateStr" type="text"><br/>
+	<label>Lon,Lat</label>
+	<input id="lon" name="lon" type="text">,
+	<input id="lat" name="lat" type="text"><br/>
+	<label>Debug</label><input name="debug" type="checkbox"><br/>
+	<input type="hidden" name="mode" value="add">
+	<input type="submit"/>
+      </form>
+    </div>
+
+<script type="text/javascript">
+    require(["dojo","dojo/date/locale","dojo/domReady!"], function(dojo,locale) {
+    var date = new Date();
+    var fmt = {datePattern: "yyyy-MM-dd", timePattern: "HH:mm:ss"}
+    dojo.byId("date").value = locale.format(date,fmt);
+    if (navigator.geolocation) {
+       navigator.geolocation.getCurrentPosition(function(loc) {
+                dojo.byId("lon").value = loc.coords.longitude;
+                dojo.byId("lat").value = loc.coords.latitude;
+          });
+    }
+    else{
+       dojo.byId("locDiv").innerHTML="Geolocation is not supported by this browser.";
+    }
+    });
+</script>
+
+<script type='text/javascript'>
+var x=document.getElementById("locDiv");
+function getLocation()
+  {
+  if (navigator.geolocation)
+    {
+    navigator.geolocation.getCurrentPosition(showPosition);
+    }
+  else{x.innerHTML="Geolocation is not supported by this browser.";}
+  }
+function showPosition(position)
+  {
+  x.innerHTML="Latitude: " + position.coords.latitude + 
+  "<br />Longitude: " + position.coords.longitude;
+
+  }
+</script>
+
+  </body>
+</html>
