@@ -19,6 +19,9 @@ $sql = <<<'EOD'
 create table users (
        	     	   userId int not null auto_increment,
                    name varchar(256),
+		   userName varchar(256),
+		   password varchar(256),
+		   icon blob,
 		   homeLat float,
 		   homeLon float,
 		   primary key (userId)
