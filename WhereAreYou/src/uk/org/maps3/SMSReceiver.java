@@ -3,6 +3,12 @@
  */
 package uk.org.maps3;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,8 +20,14 @@ import android.util.Log;
 import android.widget.Toast;
 
 /**
- * @author BEUser
- * 
+ * @author Graham Jones
+ * Class to respond to SMS messages.  The action taken depends on the contents of the SMS message.
+ * If it contains 'WAYN', the current location is determined, and an SMS reply sent with details
+ * of the current locations.
+ * If it contains 'WAY_UPLOAD', the SMS text is parsed assuming it is of the format:
+ *   WAY_UPLOAD?UNAME=xxx&PASSWD=xxx&LON=xxx&LAT=xxx&DATE=xxx.
+ * Provided the string parses correctly, a data point is uploaded to the server based on the
+ * data provided.
  */
 public class SMSReceiver extends BroadcastReceiver 
 	implements LocationReceiver, AddressReceiver {
@@ -79,12 +91,37 @@ public class SMSReceiver extends BroadcastReceiver
 					Toast.makeText(contextArg,
 							"Returned from getLocationLL()",
 							Toast.LENGTH_SHORT).show();
+				} else if  (msg0.toUpperCase().contains("WAY_UPLOAD")) {
+					Toast.makeText(contextArg,
+							"Found WAY_UPLOAD - parseing message....",
+							Toast.LENGTH_SHORT).show();
+					String msgParts[] = msg0.split("\\?");
+					if (msgParts.length>1) {
+							Toast.makeText(contextArg,"Got here",Toast.LENGTH_SHORT).show();
+						String argList[] = msgParts[1].split("\\&");
+				        List<NameValuePair> paramList = new ArrayList<NameValuePair>(2);
+						for(int i =0; i < argList.length ; i++) {
+							String key = argList[i].split("=")[0];
+							String value = argList[i].split("=")[1];
+					        paramList.add(new BasicNameValuePair(key, value));
+					        LocationUploader lu = new LocationUploader();
+					        lu.doUpload(paramList);
+							Toast.makeText(contextArg,
+									key+"="+value,
+									Toast.LENGTH_SHORT).show();
+						}
+					} else {
+						Toast.makeText(contextArg,
+								"Did not find '?' to signify start of arguments",
+									Toast.LENGTH_SHORT).show();
+					}
+					
 				} else {
 					Toast.makeText(contextArg,
-							"Message does not contain 'WAYN' - ignoring",
+							"Message does not contain 'WAYN' or 'WAY_UPLOAD' - ignoring",
 							Toast.LENGTH_SHORT).show();
 				}
-			} else {
+		} else {
 				Toast.makeText(contextArg,
 						"WAYN Disabled - Ignoring",
 						Toast.LENGTH_SHORT).show();
