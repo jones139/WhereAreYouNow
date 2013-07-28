@@ -16,6 +16,9 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 import android.util.Log;
+import android.net.ConnectivityManager;
+import android.content.Context;
+import android.net.NetworkInfo;
 
 
 interface AddressReceiver {
@@ -33,9 +36,11 @@ public class AddressLookup implements Runnable {
     public String resultStr;
     LonLat ll;
     AddressReceiver ar;
+    Context context;
     
-    public AddressLookup(AddressReceiver ar) {
+    public AddressLookup(AddressReceiver ar,Context c) {
 	this.ar = ar;
+	this.context = c;
     }
     
     public void doLookup(LonLat ll) {
@@ -45,74 +50,90 @@ public class AddressLookup implements Runnable {
 	trd.run();
     }
     
+    private boolean isConnected() {
+	ConnectivityManager cm =
+	    (ConnectivityManager)this.context.getSystemService(
+				       Context.CONNECTIVITY_SERVICE);
+ 
+	NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+	return activeNetwork.isConnectedOrConnecting();
+    }
+
     public void run() {
 	if (ll!=null) {
-	    String url = "http://nominatim.openstreetmap.org/reverse?format=xml&" +
-		"lon="+ll.lon()+"&lat="+ll.lat();
+	    if (isConnected()) {
+		String url = "http://nominatim.openstreetmap.org/reverse?format=xml&" +
+		    "lon="+ll.lon()+"&lat="+ll.lat();
 	    
-	    HttpGet request = new HttpGet(url);
-	    ResponseHandler<String> responseHandler =
-		new BasicResponseHandler();
-	    HttpClient client = new DefaultHttpClient();
-	    String responseBody = null;
-	    try {
-		responseBody = client.execute(request,responseHandler);
-		
-		if (responseBody != null && responseBody.length() >0) {
-		    Log.d("AddressLookup","responseBody="+responseBody);
+		HttpGet request = new HttpGet(url);
+		ResponseHandler<String> responseHandler =
+		    new BasicResponseHandler();
+		HttpClient client = new DefaultHttpClient();
+		String responseBody = null;
+		try {
+		    responseBody = client.execute(request,responseHandler);
 		    
-		    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-		    factory.setNamespaceAware(true);
-		    XmlPullParser xpp = factory.newPullParser();
-		    
-		    xpp.setInput( new StringReader ( responseBody ) );
-		    int eventType = xpp.getEventType();
-		    Boolean foundResult = false;
-		    resultStr = null;
-		    while (eventType != XmlPullParser.END_DOCUMENT) {
-			if(eventType == XmlPullParser.START_DOCUMENT) {
-			    Log.d("AddressLookup","Start document");
-			} else if(eventType == XmlPullParser.START_TAG) {
-			    if (xpp.getName().equals("result")) 
-				foundResult = true;
-			    //Log.d("AddressLookup","Start tag "+xpp.getName());
-			} else if(eventType == XmlPullParser.END_TAG) {
-			    if (xpp.getName().equals("result")) 
-				foundResult = false;
-			    //Log.d("AddressLookup","End tag "+xpp.getName());
-			} else if(eventType == XmlPullParser.TEXT) {
-			    if (foundResult) {
-				resultStr = xpp.getText();
-				Log.d("AddressLookup","result: "+xpp.getText());
+		    if (responseBody != null && responseBody.length() >0) {
+			Log.d("AddressLookup","responseBody="+responseBody);
+			
+			XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+			factory.setNamespaceAware(true);
+			XmlPullParser xpp = factory.newPullParser();
+			
+			xpp.setInput( new StringReader ( responseBody ) );
+			int eventType = xpp.getEventType();
+			Boolean foundResult = false;
+			resultStr = null;
+			while (eventType != XmlPullParser.END_DOCUMENT) {
+			    if(eventType == XmlPullParser.START_DOCUMENT) {
+				Log.d("AddressLookup","Start document");
+			    } else if(eventType == XmlPullParser.START_TAG) {
+				if (xpp.getName().equals("result")) 
+				    foundResult = true;
+				//Log.d("AddressLookup","Start tag "+xpp.getName());
+			    } else if(eventType == XmlPullParser.END_TAG) {
+				if (xpp.getName().equals("result")) 
+				    foundResult = false;
+				//Log.d("AddressLookup","End tag "+xpp.getName());
+			    } else if(eventType == XmlPullParser.TEXT) {
+				if (foundResult) {
+				    resultStr = xpp.getText();
+				    Log.d("AddressLookup","result: "+xpp.getText());
+				}
 			    }
+			    eventType = xpp.next();
 			}
-			eventType = xpp.next();
-		    }
-		    Log.d("AddressLookup","End document");
-		    Log.d("AddressLookup","resultStr="+resultStr);
+			Log.d("AddressLookup","End document");
+			Log.d("AddressLookup","resultStr="+resultStr);
 		    
-		    ar.onAddressFound(this.ll,resultStr);
-		} else
-		    ar.onAddressFound(this.ll,"Error - no response");
+			ar.onAddressFound(this.ll,resultStr);
+		    } else
+			ar.onAddressFound(this.ll,"Error - no response");
 		
-	    } catch (ClientProtocolException e) {
-		// TODO Auto-generated catch block
-		Log.d("AddressLookup","ClientProtocolException");
-		e.printStackTrace();
-		ar.onAddressFound( this.ll,"Error - ClientProtocolException");
-	    } catch (IOException e) {
-		// TODO Auto-generated catch block
-		Log.d("AddressLookup","IOException");
-		e.printStackTrace();
-		ar.onAddressFound(this.ll,"Error - IOException");
-	    } catch (XmlPullParserException e) {
-		// TODO Auto-generated catch block
-		Log.d("AddressLookup","XmlPullParserException");
-		e.printStackTrace();
-		ar.onAddressFound(this.ll,"Error - XmlPullParserException");
+		} catch (ClientProtocolException e) {
+		    // TODO Auto-generated catch block
+		    Log.d("AddressLookup","ClientProtocolException");
+		    e.printStackTrace();
+		    ar.onAddressFound( this.ll,"Error - ClientProtocolException");
+		} catch (IOException e) {
+		    // TODO Auto-generated catch block
+		    Log.d("AddressLookup","IOException");
+		    e.printStackTrace();
+		    ar.onAddressFound(this.ll,"Error - IOException");
+		} catch (XmlPullParserException e) {
+		    // TODO Auto-generated catch block
+		    Log.d("AddressLookup","XmlPullParserException");
+		    e.printStackTrace();
+		    ar.onAddressFound(this.ll,"Error - XmlPullParserException");
+		}
+	    }
+	    else { // isConnected
+		Log.d("AddressLookup","no internet connection");
+		resultStr = "resultStr with no internet connection";
+		ar.onAddressFound(this.ll,resultStr);
 	    }
 	}
-	else {
+	else { // ll is null
 	    Log.d("AddressLookup","ll is null - ignoring");
 	    ar.onAddressFound(this.ll,"Error - ll is null - ignoring");
 	}

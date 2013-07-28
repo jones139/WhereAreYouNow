@@ -149,7 +149,7 @@ public class SMSReceiver extends BroadcastReceiver
 	Toast.makeText(mContext, "onLocationFound()", Toast.LENGTH_SHORT)
 	    .show();
 	if (ll != null) {
-	    AddressLookup al = new AddressLookup(this);
+	    AddressLookup al = new AddressLookup(this,mContext);
 	    al.doLookup(ll);
 	} else {
 	    Toast.makeText(mContext, "Failed to find location - sorry!",
